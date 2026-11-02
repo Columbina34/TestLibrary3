@@ -1,14 +1,12 @@
--- Monium Library v2.1 — Simple Edition
--- Usage: local Lib = loadstring(game:HttpGet("URL"))()
-
+-- Monium Library v2.1.2 — Simple Edition
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UIS = game:GetService("UserInputService")
 
 local function GuiParent()
-    if gethui then local ok, h = pcall(gethui); if ok then return h end end
+    if gethui then local ok, h = pcall(gethui); if ok and h then return h end end
     local ok, cg = pcall(function() return game:GetService("CoreGui") end)
-    if ok then return cg end
+    if ok and cg then return cg end
     return Players.LocalPlayer:WaitForChild("PlayerGui")
 end
 
@@ -50,13 +48,29 @@ local function list(pad, parent)
     })
 end
 
--- ─────────────────────────────────────────────────────────────
--- Library
--- ─────────────────────────────────────────────────────────────
-local Lib = {}
-Lib.__index = Lib
+local function pad(p, parent)
+    return mk("UIPadding", {
+        PaddingTop = UDim.new(0, p), PaddingBottom = UDim.new(0, p),
+        PaddingLeft = UDim.new(0, p), PaddingRight = UDim.new(0, p),
+        Parent = parent,
+    })
+end
 
+-- ─────────────────────────────────────────────────────────────
+-- Class tables
+-- ─────────────────────────────────────────────────────────────
+local Lib    = {}
+local Window = {}
+local Tab    = {}
+local Group  = {}
+
+Window.__index = Window
+Tab.__index    = Tab
+Group.__index  = Group
+
+-- ─────────────────────────────────────────────────────────────
 -- Notifications
+-- ─────────────────────────────────────────────────────────────
 local notifGui, notifHolder, notifCount = nil, nil, 0
 
 function Lib:Notify(title, text, duration)
@@ -74,7 +88,10 @@ function Lib:Notify(title, text, duration)
     end
 
     while notifCount >= 4 do
-        local old = notifHolder:FindFirstChildWhichIsA("Frame")
+        local old
+        for _, c in ipairs(notifHolder:GetChildren()) do
+            if c:IsA("Frame") then old = c; break end
+        end
         if not old then break end
         old:Destroy(); notifCount = notifCount - 1
     end
@@ -122,31 +139,29 @@ end
 -- ─────────────────────────────────────────────────────────────
 function Lib:Window(opts)
     opts = opts or {}
-    local win = setmetatable({}, { __index = Lib.Window })
-    win.Tabs = {}
-    win.Title = opts.Title or "Hub"
-    win.Size = UDim2.fromOffset(560, 400)
-    win.Open = true
+    local self = setmetatable({}, Window)
+    self.Tabs  = {}
+    self.Title = opts.Title or "Hub"
+    self.Size  = UDim2.fromOffset(560, 400)
 
-    win.Gui = mk("ScreenGui", {
+    self.Gui = mk("ScreenGui", {
         Name = "MoniumUI", ResetOnSpawn = false,
         DisplayOrder = 9000, Parent = GuiParent(),
     })
 
-    win.Frame = mk("Frame", {
-        Size = win.Size,
+    self.Frame = mk("Frame", {
+        Size = self.Size,
         Position = UDim2.new(0.5, -280, 0.5, -200),
         BackgroundColor3 = Theme.Bg, BorderSizePixel = 0,
-        Parent = win.Gui,
+        Parent = self.Gui,
     })
-    corner(UDim.new(0, 12)).Parent = win.Frame
-    mk("UIStroke", { Color = Theme.Border, Parent = win.Frame })
+    corner(UDim.new(0, 12)).Parent = self.Frame
+    mk("UIStroke", { Color = Theme.Border, Parent = self.Frame })
 
-    -- Header
     local header = mk("Frame", {
         Size = UDim2.new(1, 0, 0, 44),
         BackgroundColor3 = Theme.Surface, BorderSizePixel = 0,
-        Parent = win.Frame,
+        Parent = self.Frame,
     })
     corner(UDim.new(0, 12)).Parent = header
     mk("Frame", {
@@ -155,7 +170,7 @@ function Lib:Window(opts)
     })
     mk("TextLabel", {
         Size = UDim2.new(1, -80, 1, 0), Position = UDim2.new(0, 16, 0, 0),
-        BackgroundTransparency = 1, Text = win.Title,
+        BackgroundTransparency = 1, Text = self.Title,
         TextColor3 = Theme.Text, Font = Enum.Font.GothamBold, TextSize = 14,
         TextXAlignment = Enum.TextXAlignment.Left, Parent = header,
     })
@@ -169,37 +184,26 @@ function Lib:Window(opts)
     corner().Parent = close
     close.MouseEnter:Connect(function() tween(close, { BackgroundColor3 = Theme.Red }) end)
     close.MouseLeave:Connect(function() tween(close, { BackgroundColor3 = Theme.Alt }) end)
-    close.MouseButton1Click:Connect(function() win.Gui:Destroy() end)
+    close.MouseButton1Click:Connect(function() self.Gui:Destroy() end)
 
-    -- Sidebar
-    win.Sidebar = mk("Frame", {
+    self.Sidebar = mk("Frame", {
         Size = UDim2.new(0, 140, 1, -44), Position = UDim2.new(0, 0, 0, 44),
-        BackgroundColor3 = Theme.Bg, BorderSizePixel = 0, Parent = win.Frame,
+        BackgroundColor3 = Theme.Bg, BorderSizePixel = 0, Parent = self.Frame,
     })
-    list(4, win.Sidebar)
-    mk("UIPadding", {
-        PaddingTop = UDim.new(0, 8), PaddingLeft = UDim.new(0, 8),
-        PaddingRight = UDim.new(0, 8), PaddingBottom = UDim.new(0, 8),
-        Parent = win.Sidebar,
-    })
+    list(4, self.Sidebar)
+    pad(8, self.Sidebar)
 
-    -- Content
-    win.Content = mk("Frame", {
+    self.Content = mk("Frame", {
         Size = UDim2.new(1, -140, 1, -44), Position = UDim2.new(0, 140, 0, 44),
-        BackgroundColor3 = Theme.Surface, BorderSizePixel = 0, Parent = win.Frame,
+        BackgroundColor3 = Theme.Surface, BorderSizePixel = 0, Parent = self.Frame,
     })
-    mk("UIPadding", {
-        PaddingTop = UDim.new(0, 10), PaddingLeft = UDim.new(0, 10),
-        PaddingRight = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10),
-        Parent = win.Content,
-    })
+    pad(10, self.Content)
 
-    -- Drag
     local dragging, dragStart, startPos
     header.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1
         or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true; dragStart = input.Position; startPos = win.Frame.Position
+            dragging = true; dragStart = input.Position; startPos = self.Frame.Position
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then dragging = false end
             end)
@@ -209,31 +213,32 @@ function Lib:Window(opts)
         if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
         or input.UserInputType == Enum.UserInputType.Touch) then
             local d = input.Position - dragStart
-            win.Frame.Position = UDim2.new(
+            self.Frame.Position = UDim2.new(
                 startPos.X.Scale, startPos.X.Offset + d.X,
                 startPos.Y.Scale, startPos.Y.Offset + d.Y)
         end
     end)
 
-    return win
+    return self
 end
 
-function Lib.Window:Tab(opts)
+function Window:Tab(opts)
     opts = opts or {}
-    local tab = { Name = opts.Name or "Tab", Groups = {}, Window = self }
-    tab.__index = Lib.Tab
-    setmetatable(tab, Lib.Tab)
+    local self2 = setmetatable({}, Tab)
+    self2.Window = self
+    self2.Name   = opts.Name or "Tab"
+    self2.Groups = {}
 
-    tab.Button = mk("TextButton", {
+    self2.Button = mk("TextButton", {
         Size = UDim2.new(1, 0, 0, 30), BackgroundColor3 = Theme.Bg,
-        BorderSizePixel = 0, Text = "  " .. tab.Name,
+        BorderSizePixel = 0, Text = "  " .. self2.Name,
         TextColor3 = Theme.Dim, Font = Enum.Font.Gotham, TextSize = 12,
         TextXAlignment = Enum.TextXAlignment.Left, AutoButtonColor = false,
         Parent = self.Sidebar,
     })
-    corner().Parent = tab.Button
+    corner().Parent = self2.Button
 
-    tab.Frame = mk("ScrollingFrame", {
+    self2.Frame = mk("ScrollingFrame", {
         Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1,
         BorderSizePixel = 0, ScrollBarThickness = 3,
         ScrollBarImageColor3 = Theme.Accent,
@@ -241,59 +246,62 @@ function Lib.Window:Tab(opts)
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
         Visible = false, Parent = self.Content,
     })
-    list(8, tab.Frame)
+    list(8, self2.Frame)
 
-    tab.Button.MouseButton1Click:Connect(function()
+    self2.Button.MouseButton1Click:Connect(function()
         for _, t in ipairs(self.Tabs) do
-            t.Frame.Visible = (t == tab)
+            t.Frame.Visible = (t == self2)
             tween(t.Button, {
-                BackgroundColor3 = (t == tab) and Theme.Accent or Theme.Bg,
-                TextColor3 = (t == tab) and Theme.Text or Theme.Dim,
+                BackgroundColor3 = (t == self2) and Theme.Accent or Theme.Bg,
+                TextColor3 = (t == self2) and Theme.Text or Theme.Dim,
             })
         end
     end)
 
-    table.insert(self.Tabs, tab)
+    table.insert(self.Tabs, self2)
     if #self.Tabs == 1 then
-        tab.Frame.Visible = true
-        tab.Button.BackgroundColor3 = Theme.Accent
-        tab.Button.TextColor3 = Theme.Text
+        self2.Frame.Visible = true
+        self2.Button.BackgroundColor3 = Theme.Accent
+        self2.Button.TextColor3 = Theme.Text
     end
-    return tab
+    return self2
 end
 
-function Lib.Tab:Group(opts)
+-- ─────────────────────────────────────────────────────────────
+-- Tab
+-- ─────────────────────────────────────────────────────────────
+function Tab:Group(opts)
     opts = opts or {}
-    local group = { Frame = mk("Frame", {
-        Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y,
-        BackgroundColor3 = Theme.Bg, BorderSizePixel = 0, Parent = self.Frame,
-    })}
-    corner(UDim.new(0, 10)).Parent = group.Frame
-    list(6, group.Frame)
-    mk("UIPadding", {
-        PaddingTop = UDim.new(0, 10), PaddingLeft = UDim.new(0, 10),
-        PaddingRight = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10),
-        Parent = group.Frame,
+    local self2 = setmetatable({}, Group)
+    self2.Tab = self
+
+    self2.Frame = mk("Frame", {
+        Size = UDim2.new(1, 0, 0, 0),
+        AutomaticSize = Enum.AutomaticSize.Y,
+        BackgroundColor3 = Theme.Bg, BorderSizePixel = 0,
+        Parent = self.Frame,
     })
-    setmetatable(group, Lib.Group)
+    corner(UDim.new(0, 10)).Parent = self2.Frame
+    list(6, self2.Frame)
+    pad(10, self2.Frame)
 
     if opts.Name then
         mk("TextLabel", {
             Size = UDim2.new(1, 0, 0, 18), BackgroundTransparency = 1,
             Text = string.upper(opts.Name), TextColor3 = Theme.Accent,
             Font = Enum.Font.GothamBold, TextSize = 11,
-            TextXAlignment = Enum.TextXAlignment.Left, Parent = group.Frame,
+            TextXAlignment = Enum.TextXAlignment.Left, Parent = self2.Frame,
         })
     end
-    return group
+
+    table.insert(self.Groups, self2)
+    return self2
 end
 
 -- ─────────────────────────────────────────────────────────────
--- Components
+-- Group components
 -- ─────────────────────────────────────────────────────────────
-Lib.Group = {}
-
-function Lib.Group:Button(opts)
+function Group:Button(opts)
     opts = opts or {}
     local b = mk("TextButton", {
         Size = UDim2.new(1, 0, 0, 32), BackgroundColor3 = Theme.Alt,
@@ -313,7 +321,7 @@ function Lib.Group:Button(opts)
     return b
 end
 
-function Lib.Group:Toggle(opts)
+function Group:Toggle(opts)
     opts = opts or {}
     local state = opts.Default or false
 
@@ -361,7 +369,7 @@ function Lib.Group:Toggle(opts)
     return ctrl
 end
 
-function Lib.Group:Slider(opts)
+function Group:Slider(opts)
     opts = opts or {}
     local min, max = opts.Min or 0, opts.Max or 100
     local value = opts.Default or min
@@ -437,7 +445,7 @@ function Lib.Group:Slider(opts)
     return ctrl
 end
 
-function Lib.Group:Input(opts)
+function Group:Input(opts)
     opts = opts or {}
     local frame = mk("Frame", {
         Size = UDim2.new(1, 0, 0, 32), BackgroundColor3 = Theme.Alt,
@@ -465,7 +473,7 @@ function Lib.Group:Input(opts)
     return ctrl
 end
 
-function Lib.Group:Dropdown(opts)
+function Group:Dropdown(opts)
     opts = opts or {}
     local options = opts.Options or {}
     local selected = opts.Default
@@ -557,13 +565,21 @@ function Lib.Group:Dropdown(opts)
     return ctrl
 end
 
-function Lib.Group:Label(text)
+function Group:Label(text)
     return mk("TextLabel", {
         Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y,
         BackgroundTransparency = 1, Text = text or "",
         TextColor3 = Theme.Dim, Font = Enum.Font.Gotham, TextSize = 11,
         TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left,
         Parent = self.Frame,
+    })
+end
+
+function Group:Divider()
+    return mk("Frame", {
+        Size = UDim2.new(1, 0, 0, 1),
+        BackgroundColor3 = Theme.Border,
+        BorderSizePixel = 0, Parent = self.Frame,
     })
 end
 
