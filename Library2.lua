@@ -1,4 +1,9 @@
--- Monium Library v2.1.2 — Simple Edition
+-- Monium Library v2.1.3 — Simple Edition
+-- If you still see "attempt to index function with 'Tab'" — you're running old code.
+-- Verify: print(Lib.Version) after loading. Must say "2.1.3". If not → cache/URL issue.
+
+local VERSION = "2.1.3"
+
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UIS = game:GetService("UserInputService")
@@ -57,7 +62,7 @@ local function pad(p, parent)
 end
 
 -- ─────────────────────────────────────────────────────────────
--- Class tables
+-- Class tables — MUST be declared before any methods use them
 -- ─────────────────────────────────────────────────────────────
 local Lib    = {}
 local Window = {}
@@ -67,6 +72,8 @@ local Group  = {}
 Window.__index = Window
 Tab.__index    = Tab
 Group.__index  = Group
+
+Lib.Version = VERSION
 
 -- ─────────────────────────────────────────────────────────────
 -- Notifications
@@ -135,7 +142,7 @@ function Lib:Notify(title, text, duration)
 end
 
 -- ─────────────────────────────────────────────────────────────
--- Window
+-- Lib:Window  (constructor — returns a Window instance)
 -- ─────────────────────────────────────────────────────────────
 function Lib:Window(opts)
     opts = opts or {}
@@ -222,6 +229,9 @@ function Lib:Window(opts)
     return self
 end
 
+-- ─────────────────────────────────────────────────────────────
+-- Window:Tab
+-- ─────────────────────────────────────────────────────────────
 function Window:Tab(opts)
     opts = opts or {}
     local self2 = setmetatable({}, Tab)
@@ -268,7 +278,7 @@ function Window:Tab(opts)
 end
 
 -- ─────────────────────────────────────────────────────────────
--- Tab
+-- Tab:Group
 -- ─────────────────────────────────────────────────────────────
 function Tab:Group(opts)
     opts = opts or {}
